@@ -1,5 +1,6 @@
 # FROM pytorch/pytorch:1.2-cuda10.0-cudnn7-devel
-FROM pytorch/pytorch:1.3-cuda10.1-cudnn7-devel
+#FROM pytorch/pytorch:1.3-cuda10.1-cudnn7-devel
+FROM pytorch/pytorch:1.4-cuda10.1-cudnn7-devel
 
 ENV LOCAL_UID 15083
 ENV LOCAL_UNAME makino.15083
@@ -24,7 +25,7 @@ RUN chsh -s /bin/zsh $LOCAL_UNAME
 RUN git clone https://github.com/bowdbeg/my_setting.git /root/my_setting && cp /root/my_setting/.zshrc /home/${LOCAL_UNAME} && chown ${LOCAL_UNAME}:${LOCAL_UNAME} /home/${LOCAL_UNAME}/.zshrc
 
 # pip install packages
-RUN pip install numpy matplotlib yapf pylint optuna tqdm tensorboardX sentencepiece transformers scikit-learn tensorboard
+RUN pip install numpy matplotlib yapf pylint optuna tqdm tensorboardX sentencepiece transformers scikit-learn tensorboard torchtext
 
 # config git account
 RUN git config --global user.name ${GIT_UNAME} && git config --global user.email ${GIT_EMAIL}
