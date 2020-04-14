@@ -8,10 +8,9 @@ ENV PASSWORD 15083
 ENV GIT_UNAME bowdbeg
 ENV GIT_EMAIL bear.kohei@gmail.com
 
-EXPOSE 22
-
 # install essential softwares
-RUN apt update && apt install -y vim zsh git ssh sudo
+RUN apt update && apt install -y vim zsh git ssh sudo language-pack-en
+RUN sudo update-locale LANG=en_US.UTF-8
 
 # add user
 RUN useradd ${LOCAL_UNAME} --uid ${LOCAL_UID} --create-home && usermod -aG sudo ${LOCAL_UNAME}
@@ -31,14 +30,19 @@ RUN pip install numpy matplotlib yapf pylint optuna tqdm tensorboardX sentencepi
 RUN git config --global user.name ${GIT_UNAME} && git config --global user.email ${GIT_EMAIL}
 
 # symbolic link
-RUN ln -s /workspace /home/makino.15083/workspace/
+RUN ln -s /workspace /home/${LOCAL_UNAME}/workspace/
 
 # setup ssh
-RUN apt install -y openssh-server sysv-rc-conf
+RUN apt install -y openssh-server
 RUN mkdir -p /var/run/sshd
-RUN sysv-rc-conf ssh on
-#RUN ssh-keygen -t rsa  -N '' -f /etc/ssh/ssh_host_rsa_key && ssh-keygen -t dsa  -N '' -f /etc/ssh/ssh_host_dsa_key
-RUN /etc/init.d/ssh start
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+RUN ssh-keygen -t rsa -b 4096 -P "" -N ""  -f /etc/ssh/ssh_host_rsa_key -y
+
+EXPOSE 22
+CMD echo "$PASSWORD" | sudo -S /usr/sbin/sshd -D
 
 USER ${LOCAL_UNAME}
 WORKDIR /home/${LOCAL_UNAME}
