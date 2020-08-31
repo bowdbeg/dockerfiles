@@ -1,6 +1,7 @@
 # FROM pytorch/pytorch:1.2-cuda10.0-cudnn7-devel
 #FROM pytorch/pytorch:1.3-cuda10.1-cudnn7-devel
-FROM pytorch/pytorch:1.4-cuda10.1-cudnn7-devel
+#FROM pytorch/pytorch:1.4-cuda10.1-cudnn7-devel
+FROM pytorch/pytorch:1.5-cuda10.1-cudnn7-devel
 
 ENV LOCAL_UID 15083
 ENV LOCAL_UNAME makino.15083
@@ -24,7 +25,7 @@ RUN chsh -s /bin/zsh $LOCAL_UNAME
 RUN git clone https://github.com/bowdbeg/my_setting.git /root/my_setting && cp /root/my_setting/.zshrc /home/${LOCAL_UNAME} && chown ${LOCAL_UNAME}:${LOCAL_UNAME} /home/${LOCAL_UNAME}/.zshrc
 
 # pip install packages
-RUN pip install numpy matplotlib yapf pylint optuna tqdm tensorboardX sentencepiece transformers scikit-learn tensorboard torchtext
+RUN pip install numpy matplotlib yapf pylint optuna tqdm tensorboardX sentencepiece transformers scikit-learn tensorboard torchtext gensim spacy scispacy
 
 # config git account
 RUN git config --global user.name ${GIT_UNAME} && git config --global user.email ${GIT_EMAIL}
@@ -41,8 +42,20 @@ ENV NOTVISIBLE "in users profile"
 RUN echo "export VISIBLE=now" >> /etc/profile
 RUN ssh-keygen -t rsa -b 4096 -P "" -N ""  -f /etc/ssh/ssh_host_rsa_key -y
 
+# symboloc link to python
+RUN ln -s /opt/conda/bin/python /usr/bin/python
+
+# setup apex
+RUN cd /root && git clone https://github.com/NVIDIA/apex.git && cd apex &&  pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./
+
+RUN pip install wordcloud pyLDAvis networkx
+
 EXPOSE 22
-CMD echo "$PASSWORD" | sudo -S /usr/sbin/sshd -D
 
 USER ${LOCAL_UNAME}
 WORKDIR /home/${LOCAL_UNAME}
+
+# config git account
+RUN git config --global user.name ${GIT_UNAME} && git config --global user.email ${GIT_EMAIL}
+
+CMD echo "$PASSWORD" | sudo -S /usr/sbin/sshd -D
