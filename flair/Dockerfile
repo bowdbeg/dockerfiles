@@ -2,7 +2,8 @@
 #FROM pytorch/pytorch:1.3-cuda10.1-cudnn7-devel
 #FROM pytorch/pytorch:1.4-cuda10.1-cudnn7-devel
 #FROM pytorch/pytorch:1.5-cuda10.1-cudnn7-devel
-FROM pytorch/pytorch:1.8.0-cuda11.1-cudnn8-devel
+FROM pytorch/pytorch:1.7.1-cuda11.0-cudnn8-devel
+#FROM pytorch/pytorch:1.8.0-cuda11.1-cudnn8-devel
 
 ENV LOCAL_UID 15083
 ENV LOCAL_UNAME makino.15083
@@ -13,7 +14,7 @@ ENV CUDA cu111
 ENV TORCH 1.8.0
 
 # install essential softwares
-RUN apt update && apt install -y vim zsh git ssh sudo language-pack-en
+RUN apt update && apt install -y vim zsh git ssh sudo language-pack-en coinor-cbc
 RUN sudo update-locale LANG=en_US.UTF-8
 
 # add user
@@ -28,7 +29,7 @@ RUN chsh -s /bin/zsh $LOCAL_UNAME
 RUN git clone https://github.com/bowdbeg/my_setting.git /root/my_setting && cp /root/my_setting/.zshrc /home/${LOCAL_UNAME} && chown ${LOCAL_UNAME}:${LOCAL_UNAME} /home/${LOCAL_UNAME}/.zshrc
 
 # pip install packages
-RUN pip install numpy matplotlib yapf pylint optuna tqdm sentencepiece transformers scikit-learn tensorboard torchtext gensim spacy[$CUDA] scispacy
+RUN pip install numpy matplotlib pylint optuna tqdm sentencepiece transformers scikit-learn tensorboard spacy scispacy flair black pulp
 
 # config git account
 RUN git config --global user.name ${GIT_UNAME} && git config --global user.email ${GIT_EMAIL}
@@ -36,31 +37,9 @@ RUN git config --global user.name ${GIT_UNAME} && git config --global user.email
 # symbolic link
 RUN ln -s /workspace /home/${LOCAL_UNAME}/workspace/
 
-# setup ssh
-RUN apt install -y openssh-server
-RUN mkdir -p /var/run/sshd
-RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-ENV NOTVISIBLE "in users profile"
-RUN echo "export VISIBLE=now" >> /etc/profile
-RUN ssh-keygen -t rsa -b 4096 -P "" -N ""  -f /etc/ssh/ssh_host_rsa_key -y
-
 # symboloc link to python
 RUN ln -s /opt/conda/bin/python /usr/bin/python
 
-# setup apex
-RUN cd /root && git clone https://github.com/NVIDIA/apex.git && cd apex &&  pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./
-
-RUN pip install wordcloud pyLDAvis networkx
-
-# install pytorch geometric
-RUN pip install torch-scatter -f https://pytorch-geometric.com/whl/torch-${TORCH}+$CUDA.html
-RUN pip install torch-sparse -f https://pytorch-geometric.com/whl/torch-${TORCH}+$CUDA.html
-RUN pip install torch-cluster -f https://pytorch-geometric.com/whl/torch-${TORCH}+$CUDA.html
-RUN pip install torch-spline-conv -f https://pytorch-geometric.com/whl/torch-${TORCH}+$CUDA.html
-RUN pip install torch-geometric
-RUN pip install black
-RUN pip install streamlit
 RUN pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.2.5/en_core_sci_sm-0.2.5.tar.gz
 
 # install optuna
