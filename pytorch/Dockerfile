@@ -1,72 +1,44 @@
-# FROM pytorch/pytorch:1.2-cuda10.0-cudnn7-devel
-#FROM pytorch/pytorch:1.3-cuda10.1-cudnn7-devel
-#FROM pytorch/pytorch:1.4-cuda10.1-cudnn7-devel
-#FROM pytorch/pytorch:1.5-cuda10.1-cudnn7-devel
-FROM pytorch/pytorch:1.8.0-cuda11.1-cudnn8-devel
+FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-devel
 
-ENV LOCAL_UID 15083
-ENV LOCAL_UNAME makino.15083
-ENV PASSWORD 15083
-ENV GIT_UNAME bowdbeg
-ENV GIT_EMAIL bear.kohei@gmail.com
-ENV CUDA cu111
-ENV TORCH 1.8.0
+ARG UID 1000
+ENV CUDA cu113
+ENV TORCH 1.10.0
 
 # install essential softwares
-RUN apt update && apt install -y vim zsh git ssh sudo language-pack-en
-RUN sudo update-locale LANG=en_US.UTF-8
-
-# add user
-RUN useradd ${LOCAL_UNAME} --uid ${LOCAL_UID} --create-home && usermod -aG sudo ${LOCAL_UNAME}
-RUN ln -s /workspace /home/${LOCAL_UNAME}
-RUN echo "${LOCAL_UNAME}:${PASSWORD}" | chpasswd
-
-# change login shell
-RUN chsh -s /bin/zsh $LOCAL_UNAME
-
-# set my setting of zsh
-RUN git clone https://github.com/bowdbeg/my_setting.git /root/my_setting && cp /root/my_setting/.zshrc /home/${LOCAL_UNAME} && chown ${LOCAL_UNAME}:${LOCAL_UNAME} /home/${LOCAL_UNAME}/.zshrc
-
-# pip install packages
-RUN pip install numpy matplotlib yapf pylint optuna tqdm sentencepiece transformers scikit-learn tensorboard torchtext gensim spacy[$CUDA] scispacy
-
-# config git account
-RUN git config --global user.name ${GIT_UNAME} && git config --global user.email ${GIT_EMAIL}
-
-# symbolic link
-RUN ln -s /workspace /home/${LOCAL_UNAME}/workspace/
-
-# setup ssh
-RUN apt install -y openssh-server
-RUN mkdir -p /var/run/sshd
-RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-ENV NOTVISIBLE "in users profile"
-RUN echo "export VISIBLE=now" >> /etc/profile
-RUN ssh-keygen -t rsa -b 4096 -P "" -N ""  -f /etc/ssh/ssh_host_rsa_key -y
-
-# symboloc link to python
-RUN ln -s /opt/conda/bin/python /usr/bin/python
+RUN apt update && apt install -y vim zsh git ssh sudo language-pack-en tmux
+RUN update-locale LANG=en_US.UTF-8
 
 # setup apex
-RUN cd /root && git clone https://github.com/NVIDIA/apex.git && cd apex &&  pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./
+WORKDIR /tmp/unique_for_apex
+RUN SHA=ToUcHMe git clone https://github.com/NVIDIA/apex.git
+WORKDIR /tmp/unique_for_apex/apex
+RUN pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" .
+WORKDIR /workspace
 
-RUN pip install wordcloud pyLDAvis networkx
+# link to python
+RUN ln -s /opt/conda/bin/python /usr/bin/python
 
-# install pytorch geometric
-RUN pip install torch-scatter -f https://pytorch-geometric.com/whl/torch-${TORCH}+$CUDA.html
-RUN pip install torch-sparse -f https://pytorch-geometric.com/whl/torch-${TORCH}+$CUDA.html
-RUN pip install torch-cluster -f https://pytorch-geometric.com/whl/torch-${TORCH}+$CUDA.html
-RUN pip install torch-spline-conv -f https://pytorch-geometric.com/whl/torch-${TORCH}+$CUDA.html
-RUN pip install torch-geometric
-RUN pip install black
-RUN pip install streamlit
-RUN pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.2.5/en_core_sci_sm-0.2.5.tar.gz
+# python -m pip install packages
+RUN python -m pip install --upgrade pip
+RUN python -m pip install numpy matplotlib pylint tqdm sentencepiece transformers scikit-learn tensorboard spacy==2.3.7 scispacy black seaborn
 
 # install optuna
-RUN sudo apt update && sudo apt install -y libssl-dev python3-dev libmysqlclient-dev && pip install -U optuna mysqlclient scikit-optimize
+RUN apt install -y libssl-dev python3-dev libmysqlclient-dev sqlite3 && python -m pip install optuna mysqlclient scikit-optimize
 
-EXPOSE 22
+# install scispaCy
+RUN python -m pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.2.5/en_core_sci_sm-0.2.5.tar.gz
 
-USER ${LOCAL_UNAME}
-WORKDIR /home/${LOCAL_UNAME}
+# install pytorch geometric
+RUN python -m pip install torch-scatter -f https://pytorch-geometric.com/whl/torch-${TORCH}+${CUDA}.html
+RUN python -m pip install torch-sparse -f https://pytorch-geometric.com/whl/torch-${TORCH}+${CUDA}.html
+RUN python -m pip install torch-cluster -f https://pytorch-geometric.com/whl/torch-${TORCH}+${CUDA}.html
+RUN python -m pip install torch-spline-conv -f https://pytorch-geometric.com/whl/torch-${TORCH}+${CUDA}.html
+RUN python -m pip install torch-geometric
+
+RUN adduser --uid $UID --shell /bin/zsh --disabled-password --no-create-home user && ln -s /workspace /home/user && chown user:user /workspace && chmod 755 /workspace
+RUN git clone https://github.com/bowdbeg/my_setting.git /root/my_setting && cp /root/my_setting/.zshrc /home/user/.zshrc && chown user:user /home/user/.zshrc
+RUN python -m spacy download en_core_web_sm
+RUN apt install -y mecab libmecab-dev mecab-ipadic-utf8
+RUN python -m pip install gensim pyLDAvis wordcloud MeCab plotly
+
+USER user
