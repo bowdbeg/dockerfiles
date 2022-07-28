@@ -39,6 +39,7 @@ RUN git clone https://github.com/bowdbeg/my_setting.git /root/my_setting && cp /
 RUN python -m spacy download en_core_web_sm
 RUN apt install -y mecab libmecab-dev mecab-ipadic-utf8
 RUN python -m pip install gensim pyLDAvis wordcloud MeCab plotly
-RUN python -m pip install networkx
+RUN python -m pip install git+https://github.com/pyg-team/pytorch_geometric.git
+RUN python -m pip install networkx wandb
 
 USER user
