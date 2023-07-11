@@ -11,7 +11,7 @@ RUN update-locale LANG=en_US.UTF-8
 RUN python -m pip install --upgrade pip
 RUN python -m pip install setuptools packaging
 
-RUN python -m pip install numpy matplotlib pylint tqdm sentencepiece transformers scikit-learn tensorboard black seaborn wandb pandas optuna mysqlclient scikit-optimize opencv-python opt-einsum axial-attention ujson
+RUN python -m pip install numpy matplotlib pylint tqdm sentencepiece transformers scikit-learn tensorboard black seaborn wandb pandas optuna mysqlclient scikit-optimize opencv-python opt-einsum axial-attention ujson datasets unidecode
 
 RUN yes | adduser --uid $UID --shell /bin/zsh --disabled-password user -q
 RUN ln -s /workspace /home/user/workspace && chown user:user /workspace && chmod 755 /workspace
