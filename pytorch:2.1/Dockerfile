@@ -38,10 +38,12 @@ RUN python -m pip install --upgrade openicl
 RUN python -m pip install --upgrade peft
 RUN python -m pip install --upgrade jiwer
 RUN python -m pip install --upgrade transformers
-Run python -m pip install --upgrade deepspeed
-Run python -m pip install --upgrade transformers
+RUN python -m pip install --upgrade deepspeed
+RUN python -m pip install --upgrade transformers
 
 # for devel
 RUN apt update && apt install -y git
+RUN apt install -y rdma-core libibverbs1 libibverbs-dev  librdmacm1 librdmacm-dev rdmacm-utils ibverbs-utils
+RUN apt install -y libaio-dev
 
 WORKDIR /workspace
